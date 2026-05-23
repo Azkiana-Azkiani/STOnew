@@ -469,100 +469,534 @@ function stopScanner() {
   document.getElementById('scanModal').classList.remove('open');
 }
 
-// ============================================================
-//  KAMERA FOTO — fullscreen modal
-// ============================================================
-async function openCamera() {
-  const modal = document.getElementById('camModal');
-  modal.classList.add('open');
-  try {
-    S.cameraStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
-      audio: false
+// ======================================================
+// CAMERA MODULE
+// WhatsApp-style Camera + Auto Compress
+// ======================================================
+
+class CameraModule {
+
+  constructor() {
+
+    this.stream = null;
+    this.photoBlob = null;
+    this.location = null;
+    this.address = 'Mengambil lokasi...';
+    this.previewUrl = null;
+
+    // element
+    this.modal = document.getElementById('camModal');
+    this.video = document.getElementById('camVideo');
+    this.canvas = document.getElementById('photoCanvas');
+    this.thumb = document.getElementById('photoThumb');
+
+    // iPhone fix
+    this.video.setAttribute('playsinline', true);
+    this.video.muted = true;
+  }
+
+  // ======================================================
+  // OPEN CAMERA
+  // ======================================================
+
+  async open() {
+
+    try {
+
+      // HTTPS check
+      this.ensureSecureContext();
+
+      // open modal
+      this.modal.classList.add('open');
+
+      // get location async
+      this.getLocation();
+
+      // open camera
+      this.stream = await navigator.mediaDevices.getUserMedia({
+
+        video: {
+
+          facingMode: {
+            ideal: 'environment'
+          },
+
+          width: {
+            ideal: 1920
+          },
+
+          height: {
+            ideal: 1080
+          }
+
+        },
+
+        audio: false
+
+      });
+
+      this.video.srcObject = this.stream;
+
+      await this.video.play();
+
+    } catch (err) {
+
+      console.error(err);
+
+      this.close();
+
+      this.handleCameraError(err);
+    }
+  }
+
+  // ======================================================
+  // CAPTURE PHOTO
+  // ======================================================
+
+  async capture() {
+
+    try {
+
+      if (!this.video.videoWidth) {
+        alert('Kamera belum siap');
+        return;
+      }
+
+      const canvas = this.canvas;
+
+      canvas.width = this.video.videoWidth;
+      canvas.height = this.video.videoHeight;
+
+      const ctx = canvas.getContext('2d');
+
+      // draw frame
+      ctx.drawImage(
+        this.video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      // draw watermark
+      this.drawWatermark(
+        ctx,
+        canvas.width,
+        canvas.height
+      );
+
+      // auto compress
+      const blob = await this.compressImage(canvas);
+
+      this.photoBlob = blob;
+
+      // preview
+      this.showPreview(blob);
+
+      // stop camera
+      this.close();
+
+    } catch (err) {
+
+      console.error(err);
+
+      alert('Gagal mengambil foto');
+    }
+  }
+
+  // ======================================================
+  // AUTO COMPRESS
+  // ======================================================
+
+  async compressImage(canvas) {
+
+    let quality = 0.82;
+
+    let blob = await this.canvasToBlob(
+      canvas,
+      quality
+    );
+
+    // target max 350KB
+    while (
+      blob.size > 350 * 1024 &&
+      quality > 0.4
+    ) {
+
+      quality -= 0.05;
+
+      blob = await this.canvasToBlob(
+        canvas,
+        quality
+      );
+    }
+
+    return blob;
+  }
+
+  // ======================================================
+  // CANVAS TO BLOB
+  // ======================================================
+
+  canvasToBlob(canvas, quality = 0.9) {
+
+    return new Promise(resolve => {
+
+      canvas.toBlob(
+
+        blob => resolve(blob),
+
+        'image/jpeg',
+
+        quality
+
+      );
+
     });
-    const vid = document.getElementById('camVideo');
-    vid.srcObject = S.cameraStream;
-  } catch (err) {
-    closeCamera();
-    showToast('❌ Kamera tidak bisa dibuka: ' + err.message);
+  }
+
+  // ======================================================
+  // PREVIEW
+  // ======================================================
+
+  showPreview(blob) {
+
+    // cleanup old URL
+    if (this.previewUrl) {
+      URL.revokeObjectURL(this.previewUrl);
+    }
+
+    this.previewUrl = URL.createObjectURL(blob);
+
+    this.thumb.src = this.previewUrl;
+
+    this.thumb.style.display = 'block';
+  }
+
+  // ======================================================
+  // RETAKE
+  // ======================================================
+
+  async retake() {
+
+    this.photoBlob = null;
+
+    this.thumb.style.display = 'none';
+
+    await this.open();
+  }
+
+  // ======================================================
+  // CLOSE CAMERA
+  // ======================================================
+
+  close() {
+
+    if (this.stream) {
+
+      this.stream
+        .getTracks()
+        .forEach(track => track.stop());
+
+      this.stream = null;
+    }
+
+    this.video.srcObject = null;
+
+    this.modal.classList.remove('open');
+  }
+
+  // ======================================================
+  // LOCATION
+  // ======================================================
+
+  async getLocation() {
+
+    if (!navigator.geolocation) {
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+      async pos => {
+
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        this.location = { lat, lng };
+
+        this.address = await this.reverseGeocode(
+          lat,
+          lng
+        );
+      },
+
+      () => {
+
+        this.address = 'Lokasi tidak tersedia';
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0
+      }
+
+    );
+  }
+
+  // ======================================================
+  // REVERSE GEOCODE
+  // ======================================================
+
+  async reverseGeocode(lat, lng) {
+
+    try {
+
+      const res = await fetch(
+
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+
+      );
+
+      const data = await res.json();
+
+      if (!data.display_name) {
+        return 'Alamat tidak ditemukan';
+      }
+
+      return data.display_name
+        .split(',')
+        .slice(0, 4)
+        .join(',');
+
+    } catch (err) {
+
+      console.error(err);
+
+      return 'Alamat tidak tersedia';
+    }
+  }
+
+  // ======================================================
+  // WATERMARK
+  // ======================================================
+
+  drawWatermark(ctx, w, h) {
+
+    const now = new Date();
+
+    const timestamp = now.toLocaleString('id-ID', {
+
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+    const lines = [
+
+      `Tanggal : ${timestamp}`,
+      `Lokasi  : ${this.address}`
+
+    ];
+
+    const fontSize = Math.max(
+      20,
+      Math.round(w * 0.018)
+    );
+
+    const lineHeight = fontSize * 1.5;
+
+    const padding = 16;
+
+    ctx.font = `600 ${fontSize}px Arial`;
+
+    const textWidth = Math.max(
+      ...lines.map(line =>
+        ctx.measureText(line).width
+      )
+    );
+
+    const boxWidth = textWidth + padding * 2;
+
+    const boxHeight =
+      (lines.length * lineHeight) +
+      padding * 1.5;
+
+    const x = 20;
+
+    const y = h - boxHeight - 20;
+
+    // background
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+
+    this.roundRect(
+      ctx,
+      x,
+      y,
+      boxWidth,
+      boxHeight,
+      14
+    );
+
+    // text
+    ctx.fillStyle = '#fff';
+
+    lines.forEach((line, index) => {
+
+      ctx.fillText(
+
+        line,
+
+        x + padding,
+
+        y +
+        padding +
+        fontSize +
+        (index * lineHeight)
+
+      );
+
+    });
+  }
+
+  // ======================================================
+  // ROUNDED RECT
+  // ======================================================
+
+  roundRect(ctx, x, y, w, h, r) {
+
+    ctx.beginPath();
+
+    ctx.moveTo(x + r, y);
+
+    ctx.lineTo(x + w - r, y);
+
+    ctx.quadraticCurveTo(
+      x + w,
+      y,
+      x + w,
+      y + r
+    );
+
+    ctx.lineTo(x + w, y + h - r);
+
+    ctx.quadraticCurveTo(
+      x + w,
+      y + h,
+      x + w - r,
+      y + h
+    );
+
+    ctx.lineTo(x + r, y + h);
+
+    ctx.quadraticCurveTo(
+      x,
+      y + h,
+      x,
+      y + h - r
+    );
+
+    ctx.lineTo(x, y + r);
+
+    ctx.quadraticCurveTo(
+      x,
+      y,
+      x + r,
+      y
+    );
+
+    ctx.closePath();
+
+    ctx.fill();
+  }
+
+  // ======================================================
+  // HTTPS CHECK
+  // ======================================================
+
+  ensureSecureContext() {
+
+    const isLocalhost =
+      location.hostname === 'localhost';
+
+    const isHttps =
+      location.protocol === 'https:';
+
+    if (!isLocalhost && !isHttps) {
+
+      throw new Error(
+        'Camera membutuhkan HTTPS'
+      );
+    }
+  }
+
+  // ======================================================
+  // ERROR HANDLER
+  // ======================================================
+
+  handleCameraError(err) {
+
+    if (err.name === 'NotAllowedError') {
+
+      alert(
+        'Izin kamera ditolak'
+      );
+
+      return;
+    }
+
+    if (err.name === 'NotFoundError') {
+
+      alert(
+        'Kamera tidak ditemukan'
+      );
+
+      return;
+    }
+
+    if (err.name === 'NotReadableError') {
+
+      alert(
+        'Kamera sedang digunakan aplikasi lain'
+      );
+
+      return;
+    }
+
+    alert(
+      'Gagal membuka kamera'
+    );
   }
 }
 
-function capturePhoto() {
-  const vid = document.getElementById('camVideo');
-  const canvas = document.getElementById('photoCanvas');
-  canvas.width = vid.videoWidth;
-  canvas.height = vid.videoHeight;
 
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(vid, 0, 0);
-  drawWatermark(ctx, canvas.width, canvas.height);
+// ======================================================
+// INIT
+// ======================================================
 
-  S.photoDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+const camera = new CameraModule();
 
-  const thumb = document.getElementById('photoThumb');
-  thumb.src = S.photoDataUrl;
-  thumb.style.display = 'block';
 
-  closeCamera();
-  document.getElementById('camBtns').innerHTML =
-    '<button class="btn-ghost danger" type="button" onclick="retakePhoto()">🔄 Ambil Ulang</button>';
-  showToast('📸 Foto berhasil diambil');
-}
+// ======================================================
+// BUTTON EXAMPLE
+// ======================================================
 
-function closeCamera() {
-  if (S.cameraStream) {
-    S.cameraStream.getTracks().forEach(t => t.stop());
-    S.cameraStream = null;
-  }
-  document.getElementById('camVideo').srcObject = null;
-  document.getElementById('camModal').classList.remove('open');
-}
+// buka kamera
+// camera.open();
 
-function retakePhoto() {
-  S.photoDataUrl = null;
-  document.getElementById('photoThumb').style.display = 'none';
-  document.getElementById('camBtns').innerHTML =
-    '<button class="btn-ghost primary" type="button" onclick="openCamera()">📷 Buka Kamera</button>';
-  openCamera();
-}
+// ambil foto
+// camera.capture();
 
-function drawWatermark(ctx, w, h) {
-  const now = new Date();
-  const ts = now.toLocaleString('id-ID', {
-    day:'2-digit', month:'2-digit', year:'numeric',
-    hour:'2-digit', minute:'2-digit', second:'2-digit'
-  });
-  const locLine = S.location
-    ? `GPS: ${S.location.lat.toFixed(6)}, ${S.location.lng.toFixed(6)}`
-    : 'Lokasi GPS tidak tersedia';
+// ulang foto
+// camera.retake();
 
-  const fSize = Math.max(16, Math.round(w * 0.033));
-  ctx.font = `bold ${fSize}px Arial, sans-serif`;
-
-  const pad = 12, lh = fSize * 1.6;
-  const lines = [ts, locLine];
-  const maxW = Math.max(...lines.map(l => ctx.measureText(l).width));
-  const boxW = maxW + pad * 2;
-  const boxH = lines.length * lh + pad;
-  const bx = 12, by = h - boxH - 12;
-
-  ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  roundRect(ctx, bx, by, boxW, boxH, 8);
-
-  ctx.fillStyle = '#ffffff';
-  lines.forEach((l, i) => ctx.fillText(l, bx + pad, by + pad + fSize + i * lh));
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
-  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
-  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
-  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
-  ctx.closePath(); ctx.fill();
-}
-
+// tutup kamera
+// camera.close();
 // ============================================================
 //  VIDEO
 // ============================================================

@@ -385,7 +385,7 @@ canvas{display:none}
 // ============================================================
 //  ⚙️  KONFIGURASI — isi URL Google Apps Script Anda di sini
 // ============================================================
-const GAS_URL = 'PASTE_YOUR_GAS_WEB_APP_URL_HERE';
+const GAS_URL = 'https://script.google.com/a/macros/spx-external.com/s/AKfycbygKbOfY3BSS01tback1tjwDrQ2-v5nrT-Z5cLHOfbWPMDyPifFC4GGQv84OS5_jlKl4w/exec';
 
 // ============================================================
 //  STATE
@@ -595,7 +595,7 @@ async function submitForm() {
   if (!S.photoDataUrl) return showToast('⚠️ Ambil foto terlebih dahulu');
 
   // Cek GAS_URL sudah diisi
-  if (GAS_URL === 'PASTE_YOUR_GAS_WEB_APP_URL_HERE') {
+  if (GAS_URL === 'https://script.google.com/a/macros/spx-external.com/s/AKfycbygKbOfY3BSS01tback1tjwDrQ2-v5nrT-Z5cLHOfbWPMDyPifFC4GGQv84OS5_jlKl4w/exec') {
     return showStatus('error','⚙️','GAS_URL belum diisi. Edit index.html terlebih dahulu.');
   }
 

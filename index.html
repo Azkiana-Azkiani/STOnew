@@ -402,62 +402,55 @@ const S = {
 // ============================================================
 //  GPS + ADDRESS
 // ============================================================
-(function initGPS() {
+// Fungsi untuk mengatur tampilan indikator GPS di UI
+function setGPS(success, text) {
+  const dot = document.getElementById('gpsDot');
+  const txt = document.getElementById('gpsText');
+  if (dot) {
+    if (success) dot.classList.add('active');
+    else dot.classList.remove('active');
+  }
+  if (txt) txt.textContent = text;
+}
 
+(function initGPS() {
   if (!navigator.geolocation) {
     setGPS(false, 'GPS tidak didukung');
     return;
   }
-
-  navigator.geolocation.getCurrentPosition(
-
-    async (pos) => {
-
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      try {
-
-        // Ambil alamat dari koordinat
-            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
-            const data = await response.json();
-        
-        const address =
-          data.display_name || 'Alamat tidak ditemukan';
-
-        // SIMPAN SEMUA KE STATE
-        S.location = {
-          address
-        };
-
-        // tampilkan di UI
-        setGPS(true, address);
-
-      } catch (err) {
-
-        console.error(err);
-
-        // fallback jika API gagal
-        S.location = {
-          address: `${lat.toFixed(5)}, ${lng.toFixed(5)}`
-        };
-
-        setGPS(true, S.location.address);
-      }
-    },
-
-    () => {
-      setGPS(false, 'Lokasi tidak tersedia');
-    },
-
-    {
-      enableHighAccuracy: true,
-      timeout: 12000,
-      maximumAge: 60000
+  
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    
+    try {
+      // Ditambahkan parameter email agar tidak diblokir oleh server Nominatim
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=id&email=mainjauh92@gmail.com`);
+      const data = await response.json();
+      const address = data.display_name || 'Alamat tidak ditemukan';
+      
+      // SIMPAN ALAMAT DAN KOORDINAT KE STATE
+      S.location = { address, lat, lng };
+      
+      // Tampilkan alamat di UI
+      setGPS(true, address);
+    } catch (err) {
+      console.error('Gagal mengambil alamat:', err);
+      // Fallback jika API Nominatim gagal / timeout
+      S.location = { 
+        address: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, 
+        lat, 
+        lng 
+      };
+      setGPS(true, S.location.address);
     }
-
-  );
-
+  }, () => {
+    setGPS(false, 'Lokasi tidak tersedia');
+  }, {
+    enableHighAccuracy: true,
+    timeout: 12000,
+    maximumAge: 60000
+  });
 })();
 // ============================================================
 //  RADIO PILLS

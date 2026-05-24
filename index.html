@@ -419,19 +419,17 @@ const S = {
       try {
 
         // Ambil alamat dari koordinat
-        const response = await fetch(
+        const response = fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
         );
 
-        const data = await response.json();
+        const data = response.json();
 
         const address =
           data.display_name || 'Alamat tidak ditemukan';
 
         // SIMPAN SEMUA KE STATE
         S.location = {
-          lat,
-          lng,
           address
         };
 
@@ -444,8 +442,6 @@ const S = {
 
         // fallback jika API gagal
         S.location = {
-          lat,
-          lng,
           address: `${lat.toFixed(5)}, ${lng.toFixed(5)}`
         };
 

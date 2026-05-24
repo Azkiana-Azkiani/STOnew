@@ -414,7 +414,7 @@
       S.scanner = new Html5Qrcode('qr-reader');
       S.scanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 260, height: 90 } },
+        { fps: 10},
         (code) => {
           document.getElementById('barcode').value = code;
           document.getElementById('barcodeManual').value = code; // Sinkronkan

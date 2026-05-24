@@ -419,12 +419,9 @@ const S = {
       try {
 
         // Ambil alamat dari koordinat
-        const response = fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
-        );
-
-        const data = response.json();
-
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+            const data = await response.json();
+        
         const address =
           data.display_name || 'Alamat tidak ditemukan';
 

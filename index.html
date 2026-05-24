@@ -563,29 +563,28 @@ function retakePhoto() {
 
 function drawWatermark(ctx, w, h) {
   const now = new Date();
+
   const ts = now.toLocaleString('id-ID', {
-    day:'2-digit', month:'2-digit', year:'numeric',
-    hour:'2-digit', minute:'2-digit', second:'2-digit'
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   });
+
   const locLine = S.location
-    ? `GPS: ${S.location.lat.toFixed(6)}, ${S.location.lng.toFixed(6)}`
+    ? `Lokasi: ${S.location.address}`
     : 'Lokasi GPS tidak tersedia';
 
   const fSize = Math.max(16, Math.round(w * 0.033));
+
   ctx.font = `bold ${fSize}px Arial, sans-serif`;
 
-  const pad = 12, lh = fSize * 1.6;
-  const lines = [ts, locLine];
-  const maxW = Math.max(...lines.map(l => ctx.measureText(l).width));
-  const boxW = maxW + pad * 2;
-  const boxH = lines.length * lh + pad;
-  const bx = 12, by = h - boxH - 12;
+  ctx.fillStyle = 'white';
 
-  ctx.fillStyle = 'rgba(0,0,0,0.65)';
-  roundRect(ctx, bx, by, boxW, boxH, 8);
-
-  ctx.fillStyle = '#ffffff';
-  lines.forEach((l, i) => ctx.fillText(l, bx + pad, by + pad + fSize + i * lh));
+  ctx.fillText(ts, 20, h - 60);
+  ctx.fillText(locLine, 20, h - 25);
 }
 
 function roundRect(ctx, x, y, w, h, r) {

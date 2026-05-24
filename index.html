@@ -400,22 +400,56 @@ const S = {
 };
 
 // ============================================================
-//  GPS
+//  GPS + ADDRESS
 // ============================================================
 (function initGPS() {
-  if (!navigator.geolocation) { setGPS(false,'GPS tidak didukung'); return; }
+  if (!navigator.geolocation) {
+    setGPS(false, 'GPS tidak didukung');
+    return;
+  }
+
   navigator.geolocation.getCurrentPosition(
-    pos => {
-      S.location = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-      setGPS(true, `${S.location.lat.toFixed(5)}, ${S.location.lng.toFixed(5)}`);
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+
+      S.location = { lat, lng };
+
+      try {
+        // Reverse Geocoding
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`
+        );
+
+        const data = await response.json();
+
+        // Ambil alamat lengkap
+        const address = data.display_name || 'Alamat tidak ditemukan';
+
+        setGPS(true, address);
+
+      } catch (err) {
+        console.error(err);
+
+        // fallback jika gagal ambil alamat
+        setGPS(true, `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      }
     },
-    () => setGPS(false,'Lokasi tidak tersedia'),
-    { enableHighAccuracy:true, timeout:12000, maximumAge:60000 }
+
+    () => setGPS(false, 'Lokasi tidak tersedia'),
+
+    {
+      enableHighAccuracy: true,
+      timeout: 12000,
+      maximumAge: 60000
+    }
   );
 })();
 
 function setGPS(ok, text) {
-  document.getElementById('gpsDot').className = 'gps-dot' + (ok ? ' active' : '');
+  document.getElementById('gpsDot').className =
+    'gps-dot' + (ok ? ' active' : '');
+
   document.getElementById('gpsText').textContent = text;
 }
 

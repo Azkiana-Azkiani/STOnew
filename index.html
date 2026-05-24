@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>STO NEW · Cinambo RDC</title>
+<title>Device Check · Cinambo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
 <style>
@@ -385,7 +385,7 @@ canvas{display:none}
 // ============================================================
 //  ⚙️  KONFIGURASI — isi URL Google Apps Script Anda di sini
 // ============================================================
-const GAS_URL = 'https://script.google.com/home/projects/1BCLSUJEY5vOHrT9kFu1Gu71MV9BoIC3_24GoyyQLtpVU7OfdNRq7oxhC/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzNzZA9WcnJd9qXQWOANHb5EytRK_2LpV4XnzenKDl-nAWtKuDKnEUagO0mYbfRJdjHXg/exec';
 
 // ============================================================
 //  STATE
@@ -595,7 +595,7 @@ async function submitForm() {
   if (!S.photoDataUrl) return showToast('⚠️ Ambil foto terlebih dahulu');
 
   // Cek GAS_URL sudah diisi
-  if (GAS_URL === 'EDAN') {
+  if (GAS_URL === 'PASTE_YOUR_GAS_WEB_APP_URL_HERE') {
     return showStatus('error','⚙️','GAS_URL belum diisi. Edit index.html terlebih dahulu.');
   }
 

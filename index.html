@@ -565,8 +565,18 @@ function drawWatermark(ctx, w, h) {
   const ts = now.toLocaleString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
   const address = S.location?.address || 'Lokasi tidak tersedia';
   
-  // Teks nama gudang
-  const title = 'CINAMBO RDC';
+  // MENGAMBIL NAMA GUDANG DARI PILIHAN LOKASI
+  // Mencari elemen dengan ID 'lokasi' dan mengambil nilainya
+  const elemenLokasi = document.getElementById('lokasi');
+  let title = 'CINAMBO RDC'; // Fallback / Nilai bawaan jika kosong
+  
+  // Jika elemen lokasi ditemukan dan ada nilainya, gunakan nilai tersebut (dibuat huruf kapital)
+  if (elemenLokasi && elemenLokasi.value) {
+    title = elemenLokasi.value.toUpperCase();
+  } else if (S.lokasi) {
+    // Alternatif jika nilai tersimpan di state S.lokasi
+    title = S.lokasi.toUpperCase();
+  }
   
   const padding = 24;
   
@@ -590,7 +600,7 @@ function drawWatermark(ctx, w, h) {
   const yTime = startYAddress - lineHeight - 8;         // Posisi waktu
   const yTitle = yTime - lineHeight - 8;                // Posisi nama gudang
 
-  // 1. Cetak Nama Gudang (Bisa ubah 'white' jadi '#FFD700' kalau mau warnanya kuning emas)
+  // 1. Cetak Nama Gudang
   ctx.fillStyle = 'white';
   ctx.fillText(title, padding, yTitle);
   

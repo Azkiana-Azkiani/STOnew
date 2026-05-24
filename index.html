@@ -501,33 +501,41 @@
       document.getElementById('camBtns').innerHTML = '<button class="btn-ghost primary" type="button" onclick="openCamera()">📷 Buka Kamera</button>';
       openCamera();
     }
+// Gambar teks watermark di kanvas
+function drawWatermark(ctx, w, h) {
+  const now = new Date();
+  const ts = now.toLocaleString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const address = S.location ?. address || 'Lokasi tidak tersedia';
 
-    // Gambar teks watermark di kanvas
-    function drawWatermark(ctx, w, h) {
-      const now = new Date();
-      const ts = now.toLocaleString('id-ID', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' });
-      const address = S.location?.address || 'Lokasi tidak tersedia';
+  const padding = 20;
+  const fontSize = Math.max(16, Math.round(w * 0.022)); // Font size responsif
+  const lineHeight = fontSize + 4;
+  ctx.font = `500 ${fontSize}px 'DM Sans', Arial, sans-serif`;
 
-      const padding = 20;
-      const fontSize = Math.max(16, Math.round(w * 0.022)); // Font size responsif
-      const lineHeight = fontSize + 4;
-      ctx.font = `500 ${fontSize}px 'DM Sans', Arial, sans-serif`;
-      
-      const watermarkTeks = `Cinambo RDC· STO· ${ts}· ${address}`;
-      const bgWidth = Math.min(w * 0.9, ctx.measureText(watermarkTeks).width + (padding * 2));
-      const bgHeight = lineHeight + (padding * 1.2);
-      
-      // Gambar Latar Belakang Kotak Hitam (Transparan)
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-      roundRect(ctx, padding, padding, bgWidth, bgHeight, 10);
-      
-      // Gambar Teks
-      ctx.fillStyle = '#ffffff';
-      ctx.textBaseline = 'top';
-      
-      // Memotong teks jika terlalu panjang
-      wrapText(ctx, watermarkTeks, padding + 15, padding + 10, bgWidth - 30, lineHeight);
-    }
+  const watermarkTeks = `Cinambo RDC· STO· ${ts}· ${address}`;
+  const bgWidth = Math.min(w * 0.9, ctx.measureText(watermarkTeks).width + (padding * 2));
+  const bgHeight = lineHeight + (padding * 1.2);
+
+  // --- Perhitungan posisi di bawah ---
+  const bgX = padding;
+  const bgY = h - padding - bgHeight;
+
+  // Gambar Latar Belakang Kotak Hitam (Transparan)
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+  roundRect(ctx, bgX, bgY, bgWidth, bgHeight, 10);
+
+  // --- Perhitungan posisi teks di dalam kotak ---
+  const textX = padding + 15;
+  const textY = bgY + 10;
+
+  // Gambar Teks
+  ctx.fillStyle = '#ffffff';
+  ctx.textBaseline = 'top';
+
+  // Memotong teks jika terlalu panjang
+  wrapText(ctx, watermarkTeks, textX, textY, bgWidth - 30, lineHeight);
+}
+    
 
     // Helper: Gambar kotak sudut membulat
     function roundRect(ctx, x, y, w, h, r) {

@@ -509,7 +509,9 @@ function drawWatermark(ctx, w, h) {
   const lineHeight = fontSize + 4;
   ctx.font = `500 ${fontSize}px 'DM Sans', Arial, sans-serif`;
 
-  const watermarkTeks = `Cinambo RDC· ${ts}· ${address}`;
+  // Mengambil nilai lokasi dari state, jika kosong tampilkan teks default
+  const lokasiWatermark = S.lokasi ? S.lokasi : 'Lokasi Belum Dipilih'; 
+  const watermarkTeks = `${lokasiWatermark} · ${ts} · ${address}`;
   const bgWidth = Math.min(w * 0.9, ctx.measureText(watermarkTeks).width + (padding * 2));
   const bgHeight = lineHeight + (padding * 2);
 

@@ -414,7 +414,6 @@
         { fps: 10},
         (code) => {
           document.getElementById('barcode').value = code;
-          document.getElementById('barcodeManual').value = code; // Sinkronkan
           document.getElementById('scanHint').textContent = '✅ ' + code;
           setTimeout(() => stopScanner(), 600);
         },
@@ -623,7 +622,7 @@ function drawWatermark(ctx, w, h) {
           timestamp: new Date().toISOString(),
           lokasi: S.lokasi,
           jenis: document.getElementById('jenis').value,
-          barcode: document.getElementById('barcode').value || document.getElementById('barcodeManual').value,
+          barcode: document.getElementById('barcode').value,
           deviceId: document.getElementById('deviceId').value,
           kondisi: S.kondisi,
           photo: S.photoDataUrl,
@@ -702,7 +701,6 @@ function drawWatermark(ctx, w, h) {
       document.querySelectorAll('.radio-pill').forEach(p => p.className = 'radio-pill');
       document.getElementById('jenis').value = '';
       document.getElementById('barcode').value = '';
-      document.getElementById('barcodeManual').value = '';
       document.getElementById('deviceId').value = '';
       document.getElementById('photoThumb').style.display = 'none';
       document.getElementById('camBtns').innerHTML = '<button class="btn-ghost primary" type="button" onclick="openCamera()">📷 Buka Kamera</button>';

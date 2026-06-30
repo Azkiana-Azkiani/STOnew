@@ -254,6 +254,11 @@
     </div>
 
     <div class="card">
+      <div class="card-label">Place</div>
+      <input type="text" class="input-field" id="place" placeholder="Masukan Place Device…" style="font-family:'JetBrains Mono',monospace;font-size:14px">
+    </div>
+    
+    <div class="card">
       <div class="card-label">Kondisi Perangkat</div>
       <div class="radio-row">
         <label class="radio-pill" onclick="pickRadio(this,'kondisi','Bagus','green')">
@@ -645,6 +650,7 @@ function drawWatermark(ctx, w, h) {
           jenis: document.getElementById('jenis').value,
           barcode: document.getElementById('barcode').value,
           deviceId: document.getElementById('deviceId').value,
+          place: document.getElementById('place').value,
           kondisi: S.kondisi,
           photo: S.photoDataUrl,
           video: videoB64,
@@ -723,6 +729,7 @@ function drawWatermark(ctx, w, h) {
       document.getElementById('jenis').value = '';
       document.getElementById('barcode').value = '';
       document.getElementById('deviceId').value = '';
+      document.getElementById('place').value = '';
       document.getElementById('photoThumb').style.display = 'none';
       document.getElementById('camBtns').innerHTML = '<button class="btn-ghost primary" type="button" onclick="openCamera()">📷 Buka Kamera</button>';
       clearVideo();
